@@ -8,30 +8,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+int turn;
+int a; // Number of full cycles
+int b;
 
-int main(){
-
-    int turn;
-    int a; // Number of full cycles
-    int b;
-
-    void* thread_main(void* arg) {
-        pthread_t threads[4];    // main thread creating 4 other threads
-        int thread_ids[4] = {0, 1, 2, 3};
-
-        for (int i = 0; i < 4; i++) {
-            pthread_create(&threads[i], NULL, thread_function, &thread_ids[i]); 
-            }
-
-
-
-        for (int i = 0; i < 4; i++) {
-            pthread_join(threads[i], NULL);
-            }
-
-    }
-
-    void threads_function(void *ptr) {
+void* threads_function(void *arg) {
         pthread_mutex_t lock;
 
          int thread_id = *(int*)arg;  //taking id of threads
@@ -51,10 +32,34 @@ int main(){
             pthread_mutex_unlock(&lock);
     }
 
+    return NULL;
+
 
     }
 
 
 
-}
+int main(){
+
+
+
+        pthread_t threads[4];    // main thread creating 4 other threads
+        int thread_ids[4] = {0, 1, 2, 3};
+
+        for (int i = 0; i < 4; i++) {
+            pthread_create(&threads[i], NULL, threads_function, &thread_ids[i]); 
+            }
+
+
+
+        for (int i = 0; i < 4; i++) {
+            pthread_join(threads[i], NULL);
+            }
+
+    }
+
+    
+
+
+
 
