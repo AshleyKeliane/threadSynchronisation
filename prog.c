@@ -3,87 +3,126 @@
 
 #include <pthread.h>
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <stdbool.h>
 
-int turn;
-int a; // Number of full cycles
-int b;
-pthread_mutex_t lock;
+int turn; // var globales
+int a;  
+int b;    
 
-void* threads_function(void *arg) {
 
-         int thread_id = *(int*)arg;  //taking id of threads
-
-         for (int i = 0; i < a; i++) {
-            while (turn != thread_id); // Busy wait
-            
-            pthread_mutex_lock(&lock); //debut CS
-
-            if (thread_id==0) b=b+1;
-            if (thread_id==1) b=b+2;
-            if (thread_id==2) b=b+3;
-            if (thread_id==3) b=b+4;
-
-            printf("Thread %d \n", thread_id);
-            turn = (turn + 1) % 4; // Move to the next thread
-            pthread_mutex_unlock(&lock);  // fin CS
+void *thr0(void *arg) {
+    pthread_mutex_t lock; 
+    for (int i = 0; i < a; i++) {
+        while (1) {
+            pthread_mutex_lock(&lock);
+            if (turn == 0) { // Check if it's this thread's turn
+                b += 1;
+                printf("Thr0, (b+1=%d)\n", b);
+                turn = 1; // Set turn to the next thread
+                pthread_mutex_unlock(&lock);
+                break;
+            }
+            pthread_mutex_unlock(&lock);
+        }
     }
-
     return NULL;
+}
 
-
+void *thr1(void *arg) {
+    pthread_mutex_t lock; //var mutex local
+    for (int i = 0; i < a; i++) {
+        while (1) {
+            pthread_mutex_lock(&lock);
+            if (turn == 1) {
+                b += 2;
+                printf("Thr1, (b+2=%d)\n", b);
+                turn = 2;
+                pthread_mutex_unlock(&lock);
+                break;
+            }
+            pthread_mutex_unlock(&lock);
+        }
     }
-    
-    void *thr0(void *arg) {
-        int thread_id = *(int*)arg;
-        pthread_mutex_lock(&lock);
-        b=b+1;
-        printf("Thread %d \n", thread_id);
-        turn = (turn + 1) % 4; // Move to the next thread
-        pthread_mutex_unlock(&lock);
-        return NULL;
-    }
-    
-    
-    void *thr1(void *arg) {
-        int thread_id = *(int*)arg;
-        pthread_mutex_lock(&lock);
-        b=b+2;
-        printf("Thread %d \n", thread_id);
-        turn = (turn + 1) % 4; // Move to the next thread
-        pthread_mutex_unlock(&lock);
     return NULL;
+}
+
+void *thr2(void *arg) {
+    pthread_mutex_t lock; 
+    for (int i = 0; i < a; i++) {
+        while (1) {
+            pthread_mutex_lock(&lock);
+            if (turn == 2) {
+                b += 3;
+                printf("Thr2, (b+3=%d)\n", b);
+                turn = 3;
+                pthread_mutex_unlock(&lock);
+                break;
+            }
+            pthread_mutex_unlock(&lock);
+        }
     }
+    return NULL;
+}
+
+void *thr3(void *arg) {
+    pthread_mutex_t lock; 
+    for (int i = 0; i < a; i++) {
+        while (1) {
+            pthread_mutex_lock(&lock);
+            if (turn == 3) {
+                b += 4;
+                printf("Thr3, (b+4=%d)\n", b);
+                turn = 0; // Loop back to the first thread
+                pthread_mutex_unlock(&lock);
+                break;
+            }
+            pthread_mutex_unlock(&lock);
+        }
+    }
+    return NULL;
+}
+
+
+void fibonacciCalcul(int val) {
+
+int prev1 = 1;
+int prev2 = 1;
+
+for (int i = 1; i <= val; i++) {
     
 
-    void *thr2(void *arg) {
-        int thread_id = *(int*)arg;
-        pthread_mutex_lock(&lock);
-        b=b+3;
-        printf("Thread %d \n", thread_id);
-        turn = (turn + 1) % 4; // Move to the next thread
-        pthread_mutex_unlock(&lock);
-    return NULL;
-    }
-    
+  if (i > 2) {
+      int curr = prev1 + prev2;
+      prev2 = prev1;
+      prev1 = curr;
+      printf("%d ", curr);
+  }
+  else if (i == 1)
+      printf("%d ", prev2);
+  else if (i == 2)
+      printf("%d ", prev1);
+}
 
-    void *thr3(void *arg) {
-        int thread_id = *(int*)arg;
-        pthread_mutex_lock(&lock);
-        b=b+4;
-        printf("Thread %d \n", thread_id);
-        turn = (turn + 1) % 4; // Move to the next thread
-        pthread_mutex_unlock(&lock);
-    return NULL;
-    }
+}
 
 
 
 int main(){
-    
+    pthread_mutex_t lock;
+
+    int vala, valb, thrNum;
+    printf("Enter an integer a value : ");
+    scanf("%d", &vala);
+    printf("Enter an integer b value : ");
+    scanf("%d", &valb);
+    printf("Enter the thread # to start first (0 to 3) : ");
+    scanf("%d", &thrNum);
+
+    turn =thrNum;
+    a=vala;
+    b=valb;
+
 
         pthread_t threads[4];    // main thread creating 4 other threads
         int thread_ids[4] = {0, 1, 2, 3};
@@ -98,13 +137,18 @@ int main(){
 
 
 
-        for (int i = 0; i < 4; i++) {
-            pthread_join(threads[i], NULL);
+        for (int i = vala-1; i < vala+4; i++) {
+            pthread_join(threads[(i+1)%4], NULL);  //wait for threads to finish
             }
 
 
             // Clean up mutex
             pthread_mutex_destroy(&lock);
+            printf("Parent, (b=%d)\n", b);
+
+
+            fibonacciCalcul(b);
+            return 0;
 
     }
 
